@@ -22,34 +22,32 @@ import re
 import xml.etree.ElementTree as Et
 
 
-def underscore_to_camelcase(value):
+def under_to_camel(s):
+    """Convert lower case words separated by underscores to camel case."""
     def camelcase():
         yield str.lower
         while True:
             yield str.capitalize
 
     c = camelcase()
-    return "".join(next(c)(x) if x else '_' for x in value.split("_"))
+    return "".join(next(c)(x) if x else '_' for x in s.split("_"))
 
 
-def camelcase_to_underscore(name):
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+def camel_to_under(s):
+    """Convert a camel case string to a lower case underscore separated string."""
+    s = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', s)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s).lower()
 
 
 def get_java_type(field):
     xml_type = field.get('type')
     if xml_type == 'int8_t':
         return 'byte'
-    elif xml_type == 'uint8_t':
+    elif xml_type in ['uint8_t', 'int16_t']:
         return 'short'
-    elif xml_type == 'int16_t':
-        return 'short'
-    elif xml_type == 'uint32_t':
+    elif xml_type in ['uint32_t', 'int64_t']:
         return 'long'
-    elif xml_type == 'fp32_t':
-        return 'double'
-    elif xml_type == 'fp64_t':
+    elif xml_type in ['fp32_t', 'fp64_t']:
         return 'double'
     elif xml_type == 'plaintext':
         return 'String'
@@ -73,24 +71,18 @@ def get_java_getter(field):
     xml_type = field.get('type')
     if xml_type == 'int8_t':
         return 'getByte'
-    elif xml_type == 'uint8_t':
+    elif xml_type in ['uint8_t', 'int16_t']:
         return 'getShort'
-    elif xml_type == 'int16_t':
-        return 'getShort'
-    elif xml_type == 'uint16_t':
+    elif xml_type in ['uint16_t', 'int32_t']:
         return 'getInteger'
-    elif xml_type == 'uint32_t':
+    elif xml_type in ['uint32_t', 'int64_t']:
         return 'getLong'
-    elif xml_type == 'fp32_t':
-        return 'getDouble'
-    elif xml_type == 'fp64_t':
+    elif xml_type in ['fp32_t', 'fp64_t']:
         return 'getDouble'
     elif xml_type == 'rawdata':
         return 'getRawData'
     elif xml_type == 'plaintext':
-        if field.get('unit') == 'TupleList':
-            return 'getTupleList'
-        return 'getString'
+        return 'getTupleList' if field.get('unit') == 'TupleList' else 'getString'
     elif xml_type == 'message':
         return 'getMessageOrNull'
     elif xml_type == 'message-list':
@@ -100,7 +92,6 @@ def get_java_getter(field):
 
 def gen_bitfield_values(fd, xml_root, xml_msg):
     for xml_field in xml_msg.findall("field[@unit='Bitfield']"):
-
         bitfield_def = xml_field.get('bitfield-def')
         if bitfield_def is None:
             bitfield_prefix = xml_field.get('prefix')
@@ -150,6 +141,7 @@ def gen_enum(fd, xml_root, xml_field):
 def gen_message_group(xml_root, xml_group, dest_folder):
     class_name = xml_group.get('abbrev')
 
+    print("* Generating message group %s" % class_name)
     fd = open(os.path.join(dest_folder, class_name + '.java'), 'w')
     fd.write('package pt.lsts.imc;\n')
     fd.write('\n')
@@ -187,6 +179,7 @@ def gen_message_group(xml_root, xml_group, dest_folder):
 
 def gen_message(xml_root, xml_msg, dest_folder):
     class_name = xml_msg.get('abbrev')
+    print("* Generating message %s" % class_name)
 
     fd = open(os.path.join(dest_folder, class_name + '.java'), 'w')
     fd.write('package pt.lsts.imc;\n')
@@ -266,7 +259,7 @@ def get_java_enum_name(xml_field):
         name = xml_field.get('abbrev')
     else:
         name = xml_field.get('enum-def')
-    return camelcase_to_underscore(name).upper()
+    return camel_to_under(name).upper()
 
 
 def gen_getter(fd, xml_field, camel_case):
@@ -276,7 +269,7 @@ def gen_getter(fd, xml_field, camel_case):
 
     method_name = 'get_' + field_name
     if camel_case:
-        method_name = underscore_to_camelcase(method_name)
+        method_name = under_to_camel(method_name)
 
     if xml_field.get('unit') == 'Enumerated':
         enum_name = get_java_enum_name(xml_field)
@@ -323,7 +316,7 @@ def gen_setter(fd, class_name, xml_field, camel_case):
     field_name = xml_field.get('abbrev')
     method_name = 'set_' + field_name
     if camel_case:
-        method_name = underscore_to_camelcase(method_name)
+        method_name = under_to_camel(method_name)
     var_name = field_name
 
     if xml_field.get('unit') == 'Enumerated':
@@ -438,6 +431,9 @@ def main(xml, out_folder, no_base, force):
     # Parse XML specification.
     tree = Et.parse(xml)
     root = tree.getroot()
+
+    # Create destination folder.
+    os.makedirs(dest_folder, exist_ok=True)
 
     # Initialize constant values.
     sync = root.find("header/field/[@fixed='true']").get('value')
