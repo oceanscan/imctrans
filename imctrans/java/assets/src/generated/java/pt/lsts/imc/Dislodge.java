@@ -114,7 +114,8 @@ public class Dislodge extends Maneuver {
     }
 
     public Dislodge setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Dislodge setCustom(String custom) {

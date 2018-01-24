@@ -57,7 +57,8 @@ public class IdleManeuver extends Maneuver {
     }
 
     public IdleManeuver setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public IdleManeuver setCustom(String custom) {

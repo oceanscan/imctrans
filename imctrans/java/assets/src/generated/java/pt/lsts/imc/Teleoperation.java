@@ -48,7 +48,8 @@ public class Teleoperation extends Maneuver {
     }
 
     public Teleoperation setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Teleoperation setCustom(String custom) {

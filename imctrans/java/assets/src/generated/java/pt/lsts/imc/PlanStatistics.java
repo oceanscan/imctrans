@@ -119,7 +119,8 @@ public static final short PRP_ALL = 0x07;
     }
 
     public PlanStatistics setDurations(java.util.LinkedHashMap<String, ?> durations) {
-        return setDurations(durations);
+        values.put("durations", encodeTupleList(durations));
+        return this;
     }
 
     public PlanStatistics setDurations(String durations) {
@@ -132,7 +133,8 @@ public static final short PRP_ALL = 0x07;
     }
 
     public PlanStatistics setDistances(java.util.LinkedHashMap<String, ?> distances) {
-        return setDistances(distances);
+        values.put("distances", encodeTupleList(distances));
+        return this;
     }
 
     public PlanStatistics setDistances(String distances) {
@@ -145,7 +147,8 @@ public static final short PRP_ALL = 0x07;
     }
 
     public PlanStatistics setActions(java.util.LinkedHashMap<String, ?> actions) {
-        return setActions(actions);
+        values.put("actions", encodeTupleList(actions));
+        return this;
     }
 
     public PlanStatistics setActions(String actions) {
@@ -158,7 +161,8 @@ public static final short PRP_ALL = 0x07;
     }
 
     public PlanStatistics setFuel(java.util.LinkedHashMap<String, ?> fuel) {
-        return setFuel(fuel);
+        values.put("fuel", encodeTupleList(fuel));
+        return this;
     }
 
     public PlanStatistics setFuel(String fuel) {

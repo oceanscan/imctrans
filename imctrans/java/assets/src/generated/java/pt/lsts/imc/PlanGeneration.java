@@ -152,7 +152,8 @@ public class PlanGeneration extends IMCMessage {
     }
 
     public PlanGeneration setParams(java.util.LinkedHashMap<String, ?> params) {
-        return setParams(params);
+        values.put("params", encodeTupleList(params));
+        return this;
     }
 
     public PlanGeneration setParams(String params) {

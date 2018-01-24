@@ -102,7 +102,8 @@ public class RemoteSensorInfo extends IMCMessage {
     }
 
     public RemoteSensorInfo setData(java.util.LinkedHashMap<String, ?> data) {
-        return setData(data);
+        values.put("data", encodeTupleList(data));
+        return this;
     }
 
     public RemoteSensorInfo setData(String data) {

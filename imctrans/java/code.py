@@ -17,9 +17,17 @@
 # Author: Ricardo Martins                                                  #
 ############################################################################
 
+import io
 import os
 import re
+import shutil
 import xml.etree.ElementTree as Et
+
+from . import base
+from .. import beautify
+
+# Default package.
+PACKAGE = 'pt.lsts.imc'
 
 
 def under_to_camel(s):
@@ -140,10 +148,10 @@ def gen_enum(fd, xml_root, xml_field):
 
 def gen_message_group(xml_root, xml_group, dest_folder):
     class_name = xml_group.get('abbrev')
-
-    print("* Generating message group %s" % class_name)
-    fd = open(os.path.join(dest_folder, class_name + '.java'), 'w')
-    fd.write('package pt.lsts.imc;\n')
+    fname = os.path.join(dest_folder, class_name + '.java')
+    print("* %s" % fname)
+    fd = open(fname, 'w')
+    fd.write('package %s;\n' % PACKAGE)
     fd.write('\n')
     fd.write('public class %s extends IMCMessage {\n' % class_name)
 
@@ -179,9 +187,9 @@ def gen_message_group(xml_root, xml_group, dest_folder):
 
 def gen_message(xml_root, xml_msg, dest_folder):
     class_name = xml_msg.get('abbrev')
-    print("* Generating message %s" % class_name)
-
-    fd = open(os.path.join(dest_folder, class_name + '.java'), 'w')
+    fname = os.path.join(dest_folder, class_name + '.java')
+    print("* %s" % fname)
+    fd = open(fname, 'w')
     fd.write('package pt.lsts.imc;\n')
     fd.write('\n')
     fd.write('public class %s extends %s {\n' % (class_name, get_message_superclass(xml_root, xml_msg)))
@@ -241,6 +249,7 @@ def gen_message(xml_root, xml_msg, dest_folder):
 
     fd.write('}\n')
     fd.close()
+
 
 def get_submessage_type(xml_field):
     return 'IMCMessage' if xml_field.get('message-type') is None else xml_field.get('message-type')
@@ -335,7 +344,8 @@ def gen_setter(fd, class_name, xml_field, camel_case):
 
     if xml_field.get('unit') == 'TupleList':
         fd.write('    public %s %s(java.util.LinkedHashMap<String, ?> %s) {\n' % (class_name, method_name, field_name))
-        fd.write('        return %s(%s);\n' % (method_name, field_name))
+        fd.write('        values.put("%s", encodeTupleList(%s));\n' % (field_name, field_name))
+        fd.write('        return this;\n')
         fd.write('    }\n')
         fd.write('\n')
 
@@ -354,7 +364,7 @@ def gen_getter_setter(fd, class_name, xml_field, camel_case=True):
 def gen_header_file(root, xml_md5, dest_folder, dest_file):
     fd = open(os.path.join(dest_folder, dest_file), 'w')
 
-    fd.write('package pt.lsts.imc;')
+    fd.write('package %s;' % PACKAGE)
     fd.write('\n\n')
     fd.write('public class Header extends IMCMessage {\n')
     fd.write('    public Header() {\n')
@@ -373,96 +383,71 @@ def gen_header_file(root, xml_md5, dest_folder, dest_file):
 
 
 def gen_message_factory(xml_root, dest_folder):
-    fd = open(os.path.join(dest_folder, 'MessageFactory.java'), 'w')
+    c = io.StringIO()
 
-    fd.write('package pt.lsts.imc;')
-    fd.write('\n\n')
-    fd.write('public class MessageFactory {\n')
+    c.write('package %s;' % PACKAGE)
+    c.write('\n\n')
+    c.write('public class MessageFactory {\n')
 
-    fd.write('private static MessageFactory instance = null;\n')
-    fd.write('\n')
-    fd.write('        private MessageFactory() {}\n')
-    fd.write('\n')
-    fd.write('        public static MessageFactory getInstance() {\n')
-    fd.write('\n')
-    fd.write('                 if (instance == null)\n')
-    fd.write('                        instance = new MessageFactory();\n')
-    fd.write('\n')
-    fd.write('                return instance;\n')
-    fd.write('        }\n')
+    c.write('private static MessageFactory instance = null;\n')
+    c.write('\n')
 
-    fd.write('public IMCMessage createTypedMessage(String msgName, IMCDefinition defs) {\n')
-    fd.write('    int msgId = defs.getMessageId(msgName);\n')
-    fd.write('    return createTypedMessage(msgId, defs);\n')
-    fd.write('}\n')
+    # Constructor.
+    c.write('private MessageFactory() {\n}\n')
+    c.write('\n')
 
-    fd.write('private IMCMessage createTypedMessage(int mgid, IMCDefinition defs) {\n')
-    fd.write('    switch(mgid) {\n')
+    # getInstance().
+    c.write('public static MessageFactory getInstance() {\n')
+    c.write('    if (instance == null) {\n')
+    c.write('        instance = new MessageFactory();\n')
+    c.write('    }\n')
+    c.write('    return instance;\n')
+    c.write('}\n\n')
+
+    # createTypedMessage(String).
+    c.write('public IMCMessage createTypedMessage(String msgName, IMCDefinition defs) {\n')
+    c.write('    return createTypedMessage(defs.getMessageId(msgName), defs);\n')
+    c.write('}\n\n')
+
+    # createTypedMessage(int).
+    c.write('private IMCMessage createTypedMessage(int mgid, IMCDefinition defs) {\n')
+    c.write('    switch (mgid) {\n')
     for xml_message in xml_root.findall('message'):
-        fd.write('        case %s.ID_STATIC:\n' % xml_message.get('abbrev'))
-        fd.write('        return new %s(defs);\n' % xml_message.get('abbrev'))
-    fd.write('    default:\n')
-    fd.write('        return new IMCMessage(defs);\n')
-    fd.write('    }\n')
+        c.write('        case %s.ID_STATIC:\n' % xml_message.get('abbrev'))
+        c.write('        return new %s(defs);\n' % xml_message.get('abbrev'))
+    c.write('    default:\n')
+    c.write('        return new IMCMessage(defs);\n')
+    c.write('    }\n')
+    c.write('}\n')
 
-    fd.write('}\n')
-    fd.write('}\n')
-    fd.close()
-
-
-def gen_imc_defs(xml_root, dest_folder):
-    fd = open(os.path.join(dest_folder, 'ImcStringDefs.java'), 'w')
-
-    fd.write('package pt.lsts.imc;')
-    fd.write('\n\n')
-
-    fd.write('public class ImcStringDefs {\n')
-    fd.write('    public static final String IMC_SHA = "3209ca1753e2479b127d37dca1b8eb268aa21f12";\n')
-    fd.write('    public static final String IMC_BRANCH = "2018-01-17 3209ca1 (HEAD -> master, origin/master, origin/HEAD)";\n')
-    fd.write('    public static final String IMC_COMMIT = "José Braga (eejbraga@gmail.com), Wed Jan 17 15:23:48 WET 2018, IMC v5.4.19.";\n')
-    fd.write('}\n')
-    fd.close()
+    c.write('}\n')
+    with open(os.path.join(dest_folder, 'MessageFactory.java'), 'w') as fd:
+        fd.write(beautify.beautify(c.getvalue(), 4))
+    c.close()
 
 
 def main(xml, out_folder, no_base, force):
-    base_folder = os.path.join(out_folder, 'pt', 'lsts', 'imc')
-    dest_folder = base_folder
+    base_folder = os.path.join(out_folder)
+    package_folder = PACKAGE.split('.')
+
+    dest_folder = os.path.join(base_folder, "src", "generated", "java", *package_folder)
+    res_folder = os.path.join(base_folder, "src", "generated", "resources")
 
     # Parse XML specification.
     tree = Et.parse(xml)
     root = tree.getroot()
 
+    # Install support files.
+    if not no_base:
+        base.install(base_folder)
+
+    # Install resources.
+    os.makedirs(res_folder, exist_ok=True)
+    shutil.copy(xml, res_folder)
+
     # Create destination folder.
     os.makedirs(dest_folder, exist_ok=True)
 
-    # Initialize constant values.
-    sync = root.find("header/field/[@fixed='true']").get('value')
-    # consts = {'git_info': get_git_info(xml),
-    #           'md5': xml_md5,
-    #           'sync': sync,
-    #           'sync_rev': sync[0:2] + sync[4:6] + sync[2:4],
-    #           'version': root.get('version').strip(),
-    #           'fixed_types': {},
-    #           'variable_types': {},
-    #           'sizes': {},
-    #           'footer_size': 0,
-    #           'header_size': 0,
-    #           }
-
-    # # Header size.
-    # for f in root.findall("header/field"):
-    #     consts['header_size'] += consts['sizes'][f.get('type')]
-    #
-    # # Footer size.
-    # consts['footer_size'] = 0
-    # for f in root.findall('footer/field'):
-    #     consts['footer_size'] += consts['sizes'][f.get('type')]
-    #
-    # deps = utils.Dependencies(root)
-    # abbrevs = deps.get_list()
-
-    # gen_header_file(root, xml_md5, dest_folder, 'Header.java')
-    gen_imc_defs(root, dest_folder)
     gen_header_file(root, None, dest_folder, 'Header.java')
     gen_message_factory(root, dest_folder)
 
@@ -472,16 +457,3 @@ def main(xml, out_folder, no_base, force):
 
     for msg in root.findall('message'):
         gen_message(root, msg, dest_folder)
-
-    # gen_message_files(consts, dest_folder, root, abbrevs, xml_md5)
-    # gen_super_type_files(root, xml_md5, dest_folder)
-    # gen_all_messages_file(abbrevs, xml_md5, dest_folder, 'AllMessages.hpp')
-    # gen_enumerations_file(root, xml_md5, dest_folder, 'Enumerations.hpp')
-    # gen_bitfields_file(root, xml_md5, dest_folder, 'Bitfields.hpp')
-    # gen_constants_file(consts, xml_md5, dest_folder, 'Constants.hpp')
-    # gen_factory_file(root, xml_md5, dest_folder, 'Factory.xdef')
-    # gen_macros_file(root, xml_md5, dest_folder, 'Macros.hpp')
-    # blob.create_imc_blob(xml, dest_folder, 'Blob.hpp', force)
-
-    # if not no_base:
-    #     base.install(base_folder)

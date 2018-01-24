@@ -157,7 +157,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
     protected IMCMessage(IMCDefinition defs, Header header) {
         this.definitions = defs;
         this.header = header;
-        this.type = defs.getType(header.getInteger("mgid"));
+        this.type = defs.getType(header.get_mgid());
     }
 
     /**
@@ -201,9 +201,9 @@ public class IMCMessage implements Comparable<IMCMessage> {
                 header = defs.createHeader();
                 header.set_sync((int) defs.syncWord);
                 header.set_mgid(type.getId());
-                header.setTimestamp(System.currentTimeMillis() / 1000.0);
-                header.setDst(0xFFFF);
-                header.setDstEnt((byte) 0xFF);
+                header.set_timestamp(System.currentTimeMillis() / 1000.0);
+                header.set_dst(0xFFFF);
+                header.set_dst_ent((byte) 0xFF);
             }
         }
     }
@@ -335,7 +335,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @return The IMC identifier of this message source (system)
      */
     public int getSrc() {
-        return getHeader().getInteger("src");
+        return getHeader().get_src();
     }
 
     public String getSourceName() {
@@ -352,7 +352,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @return The IMC identifier of this message destination (system)
      */
     public int getDst() {
-        return getHeader().getDst();
+        return getHeader().get_dst();
     }
 
     /**
@@ -361,7 +361,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @return The IMC identifier of this message source entity
      */
     public short getSrcEnt() {
-        return getHeader().getSrcEnt();
+        return getHeader().get_src_ent();
     }
 
     /**
@@ -371,7 +371,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @return The IMC identifier of this message destination entity
      */
     public short getDstEnt() {
-        return getHeader().getDstEnt();
+        return getHeader().get_dst_ent();
     }
 
     /**
@@ -381,7 +381,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @return The indicated size
      */
     public int getSize() {
-        return getHeader().getSize();
+        return getHeader().get_size();
     }
 
     /**
@@ -390,7 +390,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @param src The new source of this message
      */
     public void setSrc(int src) {
-        getHeader().setSrc(src);
+        getHeader().set_src(src);
     }
 
     /**
@@ -399,7 +399,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @param dst The destination of this message
      */
     public void setDst(int dst) {
-        getHeader().setDst(dst);
+        getHeader().set_dst(dst);
     }
 
     /**
@@ -408,7 +408,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @param src_ent The source entity of this message
      */
     public void setSrcEnt(int src_ent) {
-        getHeader().setSrcEnt((byte)src_ent);
+        getHeader().set_src_ent((byte)src_ent);
     }
 
     /**
@@ -417,11 +417,11 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @param dst_ent The destination entity of this message
      */
     public void setDstEnt(int dst_ent) {
-        getHeader().setDstEnt((byte) dst_ent);
+        getHeader().set_dst_ent((byte) dst_ent);
     }
 
     protected void setSize(int size) {
-        getHeader().setSize(size);
+        getHeader().set_size(size);
     }
 
     /**
@@ -1079,8 +1079,8 @@ public class IMCMessage implements Comparable<IMCMessage> {
             header.set_sync((int) def.syncWord);
             header.set_mgid(type.getId());
             if (getTimestamp() == 0)
-                header.setTimestamp(System.currentTimeMillis() / 1000.0);
-            header.setSize(getPayloadSize());
+                header.set_timestamp(System.currentTimeMillis() / 1000.0);
+            header.set_size(getPayloadSize());
             count += header.serialize(def, out); // header
             count += def.serializeFields(this, out); // fields
             def.serialize(out.getCRC(), IMCFieldType.TYPE_UINT16, out); // footer
@@ -1106,8 +1106,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @param time The new unix time (seconds since 1970)
      */
     public void setTimestamp(double time) {
-
-        getHeader().setTimestamp(time);
+        getHeader().set_timestamp(time);
 
         for (Object o : values.values()) {
             if (o instanceof IMCMessage)
@@ -1123,7 +1122,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      * @return The message timestamp in milliseconds
      */
     public long getTimestampMillis() {
-        return (long) (getHeader().getTimestamp() * 1000);
+        return (long) (getHeader().get_timestamp() * 1000);
     }
 
     /**
@@ -1131,7 +1130,7 @@ public class IMCMessage implements Comparable<IMCMessage> {
      */
     public double getTimestamp() {
         if (header != null)
-            return header.getTimestamp();
+            return header.get_timestamp();
         return 0;
     }
 

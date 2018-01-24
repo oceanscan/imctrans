@@ -264,7 +264,8 @@ public static final short FLG_CURVE_RIGHT = 0x0002;
     }
 
     public Rows setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Rows setCustom(String custom) {

@@ -29,9 +29,6 @@
 
 package pt.lsts.imc;
 
-import pt.lsts.imc.def.DefaultProtocolParser;
-import pt.lsts.imc.def.ProtocolDefinition;
-
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.File;
@@ -152,8 +149,8 @@ public class IMCDefinition {
     }
 
     private void readDefs(InputStream is) throws Exception {
-        DefaultProtocolParser parser = new DefaultProtocolParser();
-        ProtocolDefinition def = parser.parseDefinitions(is);
+        IMCDefinitionsParser parser = new IMCDefinitionsParser();
+        IMCDefinitionsParser def = parser.parseDefinitions(is);
         specification = parser.getSpecification();
         this.version = def.getVersion();
         this.syncWord = def.getSyncWord();
@@ -288,28 +285,28 @@ public class IMCDefinition {
         if (sync == swappedWord)
             buff.order(ByteOrder.LITTLE_ENDIAN);
         else if (sync == syncWord)
-            header.setValue("sync", syncWord);
+            header.set_sync((int)syncWord);
         else {
             LOG.debug("message with invalid sync {} was discarded\n", String.format("%04X", sync));
-            byte[] tmp = new byte[header.getInteger("size") + 2];
+            byte[] tmp = new byte[header.get_size() + 2];
             buff.get(tmp);
             return nextMessage(buff);
         }
 
         deserializeAllFieldsBut(header, buff, "sync");
-        IMCMessageType type = getType(getMessageName(header.getMgid()));
+        IMCMessageType type = getType(getMessageName(header.get_mgid()));
         if (type != null) {
             IMCMessage message = MessageFactory
                     .getInstance()
-                    .createTypedMessage(getMessageName(header.getMgid()), this);
+                    .createTypedMessage(getMessageName(header.get_mgid()), this);
             message.setHeader(header);
             message.setType(type);
             deserializeFields(message, buff);
             deserialize(IMCFieldType.TYPE_UINT16, buff); // footer
             return message;
         } else {
-            LOG.debug("message with unknown id was discarded: {}", header.getInteger("mgid"));
-            byte[] tmp = new byte[header.getInteger("size") + 2];
+            LOG.debug("message with unknown id was discarded: {}", header.get_mgid());
+            byte[] tmp = new byte[header.get_size() + 2];
             buff.get(tmp);
             return nextMessage(buff);
         }
@@ -346,10 +343,10 @@ public class IMCDefinition {
         else
             throw new IOException(String.format("Unrecognized sync word: %02X", sync));
 
-        header.setValue("sync", syncWord);
+        header.set_sync((int)syncWord);
 
         deserializeAllFieldsBut(header, input, "sync");
-        int msgid = header.getInteger("mgid");
+        int msgid = header.get_mgid();
         if (msgid != -1) {
             IMCMessage message = MessageFactory.getInstance()
                     .createTypedMessage(getMessageName(msgid), this);
@@ -359,8 +356,8 @@ public class IMCDefinition {
                     + ".footer"); // footer
             return message;
         } else {
-            LOG.debug("message with unknown id was discarded: {}", header.getInteger("mgid"));
-            input.skip(header.getInteger("size") + 2);
+            LOG.debug("message with unknown id was discarded: {}", header.get_mgid());
+            input.skip(header.get_size() + 2);
             return nextMessage(input);
         }
     }
@@ -510,14 +507,10 @@ public class IMCDefinition {
             throws IOException {
         for (String field : message.getMessageType().getFieldNames()) {
 
-            Object o = deserialize(
-                    message.getMessageType().getFieldType(field), in,
-                    message.getAbbrev() + "." + field);
+            Object o = deserialize(message.getMessageType().getFieldType(field), in,message.getAbbrev() + "." + field);
             if (o instanceof IMCMessage) {
-                for (String f : new String[]{"src", "dst", "src_ent",
-                        "dst_ent"})
-                    ((IMCMessage) o).getHeader().setValue(f,
-                            message.getHeader().getValue(f));
+                for (String f : new String[]{"src", "dst", "src_ent", "dst_ent"})
+                    ((IMCMessage) o).getHeader().setValue(f, message.getHeader().getValue(f));
 
                 ((IMCMessage) o).setTimestamp(message.getTimestamp());
             }
@@ -528,14 +521,10 @@ public class IMCDefinition {
     private void deserializeFields(IMCMessage message, ByteBuffer in)
             throws IOException {
         for (String field : message.getMessageType().getFieldNames()) {
-            Object o = deserialize(
-                    message.getMessageType().getFieldType(field), in);
+            Object o = deserialize(message.getMessageType().getFieldType(field), in);
             if (o instanceof IMCMessage) {
-
-                for (String f : new String[]{"src", "dst", "src_ent",
-                        "dst_ent"})
-                    ((IMCMessage) o).getHeader().setValue(f,
-                            message.getHeader().getValue(f));
+                for (String f : new String[]{"src", "dst", "src_ent", "dst_ent"})
+                    ((IMCMessage) o).getHeader().setValue(f, message.getHeader().getValue(f));
 
                 ((IMCMessage) o).setTimestamp(message.getTimestamp());
             }
@@ -548,9 +537,7 @@ public class IMCDefinition {
             if (field.equals(fieldToSkip))
                 continue;
 
-            message.setValue(
-                    field,
-                    deserialize(message.getMessageType().getFieldType(field),
+            message.setValue(field, deserialize(message.getMessageType().getFieldType(field),
                             in, message.getAbbrev() + "." + field));
         }
     }
@@ -559,10 +546,7 @@ public class IMCDefinition {
         for (String field : message.getMessageType().getFieldNames()) {
             if (field.equals(fieldToSkip))
                 continue;
-            message.setValue(
-                    field,
-                    deserialize(message.getMessageType().getFieldType(field),
-                            in));
+            message.setValue(field, deserialize(message.getMessageType().getFieldType(field), in));
         }
     }
 
@@ -766,8 +750,7 @@ public class IMCDefinition {
     public IMCMessage create(String name, Object... values) {
         if (!messageExists(name))
             return null;
-        IMCMessage m = MessageFactory.getInstance().createTypedMessage(name,
-                this);
+        IMCMessage m = MessageFactory.getInstance().createTypedMessage(name,this);
 
         if (m.getMgid() == 65535)
             m = new IMCMessage(getType(name));

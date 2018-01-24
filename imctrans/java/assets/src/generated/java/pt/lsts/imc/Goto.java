@@ -217,7 +217,8 @@ public class Goto extends Maneuver {
     }
 
     public Goto setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Goto setCustom(String custom) {

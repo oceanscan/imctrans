@@ -190,7 +190,8 @@ public class Takeoff extends Maneuver {
     }
 
     public Takeoff setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Takeoff setCustom(String custom) {

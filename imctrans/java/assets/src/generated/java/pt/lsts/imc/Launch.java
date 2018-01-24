@@ -190,7 +190,8 @@ public class Launch extends Maneuver {
     }
 
     public Launch setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Launch setCustom(String custom) {

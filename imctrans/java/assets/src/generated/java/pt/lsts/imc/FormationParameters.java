@@ -114,7 +114,8 @@ public class FormationParameters extends IMCMessage {
     }
 
     public FormationParameters setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public FormationParameters setCustom(String custom) {

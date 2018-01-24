@@ -190,7 +190,8 @@ public class CoverArea extends Maneuver {
     }
 
     public CoverArea setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public CoverArea setCustom(String custom) {

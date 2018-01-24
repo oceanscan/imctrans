@@ -331,7 +331,8 @@ public class Sample extends Maneuver {
     }
 
     public Sample setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Sample setCustom(String custom) {

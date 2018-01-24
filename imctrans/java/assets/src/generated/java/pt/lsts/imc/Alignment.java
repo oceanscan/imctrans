@@ -132,7 +132,8 @@ public class Alignment extends Maneuver {
     }
 
     public Alignment setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Alignment setCustom(String custom) {

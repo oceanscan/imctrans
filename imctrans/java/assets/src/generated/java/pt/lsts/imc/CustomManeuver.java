@@ -66,7 +66,8 @@ public class CustomManeuver extends Maneuver {
     }
 
     public CustomManeuver setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public CustomManeuver setCustom(String custom) {

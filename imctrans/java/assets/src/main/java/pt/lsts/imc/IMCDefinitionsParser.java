@@ -27,14 +27,13 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package pt.lsts.imc.def;
+package pt.lsts.imc;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import pt.lsts.imc.IMCMessageType;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -46,13 +45,42 @@ import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 
-public class DefaultProtocolParser extends AbstractProtocolParser {
+public class IMCDefinitionsParser {
     private String specification = null;
+    private String version = "n/a";
+    private String md5 = "n/a";
+    protected String name = "n/a";
+    private int sync = 0;
+    private IMCMessageType header = null;
+    private IMCMessageType footer = null;
+    private final LinkedHashMap<String, IMCValueDescriptor> enums = new LinkedHashMap<>();
+    private final LinkedHashMap<String, IMCValueDescriptor> bitFields = new LinkedHashMap<>();
+    protected final LinkedHashMap<String, IMCMessageType> messages = new LinkedHashMap<>();
 
-    @Override
-    public ProtocolDefinition parseDefinitions(InputStream is) throws Exception {
+    public String getVersion() {
+        return version;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public long getSyncWord() {
+        return sync;
+    }
+
+    public IMCMessageType getHeader() {
+        return header;
+    }
+
+    public Collection<IMCMessageType> getMessageDefinitions() {
+        return messages.values();
+    }
+
+    public IMCDefinitionsParser parseDefinitions(InputStream is) throws Exception {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         FilterInputStream fis = new FilterInputStream(is) {
             @Override
@@ -102,7 +130,7 @@ public class DefaultProtocolParser extends AbstractProtocolParser {
 
         // md5
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        md5 = computeMD5String(bais);
+        md5 = IMCUtil.computeMD5String(bais);
 
         // get Header definition
         header = parseFields((NodeList) xPath.evaluate("header/field", root,
@@ -124,7 +152,7 @@ public class DefaultProtocolParser extends AbstractProtocolParser {
         nlist = (NodeList) xPath.evaluate("bitfields|bitmasks", root,
                 XPathConstants.NODESET);
         for (int i = 0; i < nlist.getLength(); i++)
-            bitfields.putAll(parseDescriptorSection(nlist.item(i)));
+            bitFields.putAll(parseDescriptorSection(nlist.item(i)));
 
         // Messages (first pass)
         nlist = (NodeList) xPath.evaluate("message", root,
@@ -155,7 +183,7 @@ public class DefaultProtocolParser extends AbstractProtocolParser {
         nlist = (NodeList) xPath.evaluate("message-groups/message-group", root,
                 XPathConstants.NODESET);
         for (int i = 0; i < nlist.getLength(); i++) {
-            MessageGroupType mg = parseMessageGroup(nlist.item(i));
+            IMCMessageGroupType mg = parseMessageGroup(nlist.item(i));
             messages.put(mg.getAbbrev(), mg.getMsgType());
             for (String s : mg.getSubTypes()) {
                 messages.get(s).setSuperType(mg.getMsgType());
@@ -177,9 +205,9 @@ public class DefaultProtocolParser extends AbstractProtocolParser {
         return this;
     }
 
-    private MessageGroupType parseMessageGroup(Node nd) {
+    private IMCMessageGroupType parseMessageGroup(Node nd) {
 
-        MessageGroupType group = new MessageGroupType();
+        IMCMessageGroupType group = new IMCMessageGroupType();
         group.setName(nd.getAttributes().getNamedItem("name").getTextContent());
         group.setAbbrev(nd.getAttributes().getNamedItem("abbrev")
                 .getTextContent());
@@ -202,9 +230,9 @@ public class DefaultProtocolParser extends AbstractProtocolParser {
         return group;
     }
 
-    private LinkedHashMap<String, ValueDescriptor> parseDescriptorSection(
+    private LinkedHashMap<String, IMCValueDescriptor> parseDescriptorSection(
             Node descNode) {
-        LinkedHashMap<String, ValueDescriptor> ret = new LinkedHashMap<>();
+        LinkedHashMap<String, IMCValueDescriptor> ret = new LinkedHashMap<>();
 
         if (descNode.getAttributes() == null)
             return ret;
@@ -214,7 +242,7 @@ public class DefaultProtocolParser extends AbstractProtocolParser {
             Node def = bitDefs.item(j);
             if (!def.getNodeName().equals("def"))
                 continue;
-            ValueDescriptor descriptor = readValueDescriptor(def);
+            IMCValueDescriptor descriptor = readValueDescriptor(def);
             ret.put(descriptor.getAbbrev(), descriptor);
         }
 
@@ -294,16 +322,16 @@ public class DefaultProtocolParser extends AbstractProtocolParser {
                     String bfName = field.getAttributes()
                             .getNamedItem("bitmask-def").getTextContent();
 
-                    prefix = bitfields.get(bfName).getPrefix();
-                    possibleValues.putAll(bitfields.get(bfName).getValues());
+                    prefix = bitFields.get(bfName).getPrefix();
+                    possibleValues.putAll(bitFields.get(bfName).getValues());
                 } else if (field.getAttributes().getNamedItem("bitfield-def") != null) {
                     String bfName = field.getAttributes()
                             .getNamedItem("bitfield-def").getTextContent();
 
-                    prefix = bitfields.get(bfName).getPrefix();
-                    possibleValues.putAll(bitfields.get(bfName).getValues());
+                    prefix = bitFields.get(bfName).getPrefix();
+                    possibleValues.putAll(bitFields.get(bfName).getValues());
                 } else {
-                    ValueDescriptor descriptor = readValueDescriptor(field);
+                    IMCValueDescriptor descriptor = readValueDescriptor(field);
                     prefix = descriptor.getPrefix();
                     possibleValues.putAll(descriptor.getValues());
                 }
@@ -315,9 +343,9 @@ public class DefaultProtocolParser extends AbstractProtocolParser {
         return msgType;
     }
 
-    private ValueDescriptor readValueDescriptor(Node node) {
+    private IMCValueDescriptor readValueDescriptor(Node node) {
 
-        ValueDescriptor desc = new ValueDescriptor();
+        IMCValueDescriptor desc = new IMCValueDescriptor();
         NodeList inner = node.getChildNodes();
 
         if (node.getAttributes().getNamedItem("prefix") != null)

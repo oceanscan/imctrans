@@ -27,20 +27,42 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package pt.lsts.imc.def;
+package pt.lsts.imc;
 
 import pt.lsts.imc.IMCMessageType;
 
-import java.util.Collection;
+import java.util.ArrayList;
 
-public interface ProtocolDefinition {
-    String getVersion();
+public class IMCMessageGroupType {
+    private String name, abbrev;
+    private ArrayList<String> subTypes = new ArrayList<>();
+    private IMCMessageType msgType;
 
-    String getName();
+    public String getName() {
+        return name;
+    }
 
-    long getSyncWord();
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    IMCMessageType getHeader();
+    public String getAbbrev() {
+        return abbrev;
+    }
 
-    Collection<IMCMessageType> getMessageDefinitions();
+    public void setAbbrev(String abbrev) {
+        this.abbrev = abbrev;
+    }
+
+    public ArrayList<String> getSubTypes() {
+        return subTypes;
+    }
+
+    public IMCMessageType getMsgType() {
+        return msgType;
+    }
+
+    public void setMsgType(IMCMessageType msgType) {
+        this.msgType = msgType;
+    }
 }

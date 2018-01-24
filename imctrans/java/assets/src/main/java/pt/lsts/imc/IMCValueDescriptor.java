@@ -27,16 +27,16 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package pt.lsts.imc.def;
+package pt.lsts.imc;
 
-import pt.lsts.imc.IMCMessageType;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
-import java.util.ArrayList;
-
-public class MessageGroupType {
-    private String name, abbrev;
-    private ArrayList<String> subTypes = new ArrayList<>();
-    private IMCMessageType msgType;
+public class IMCValueDescriptor {
+    private String name;
+    private String abbrev;
+    private String prefix;
+    private final LinkedHashMap<Long, String> values = new LinkedHashMap<>();
 
     public String getName() {
         return name;
@@ -54,15 +54,27 @@ public class MessageGroupType {
         this.abbrev = abbrev;
     }
 
-    public ArrayList<String> getSubTypes() {
-        return subTypes;
+    public String getPrefix() {
+        return prefix;
     }
 
-    public IMCMessageType getMsgType() {
-        return msgType;
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
     }
 
-    public void setMsgType(IMCMessageType msgType) {
-        this.msgType = msgType;
+    public LinkedHashMap<Long, String> getValues() {
+        return values;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("{\n");
+
+        for (Entry<Long, String> entry : getValues().entrySet()) {
+            sb.append("\t").append(entry.getKey()).append(" -> \t").append(entry.getValue()).append("\n");
+        }
+
+        sb.append("}");
+        return sb.toString();
     }
 }

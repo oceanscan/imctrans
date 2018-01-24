@@ -57,7 +57,8 @@ public class Event extends IMCMessage {
     }
 
     public Event setData(java.util.LinkedHashMap<String, ?> data) {
-        return setData(data);
+        values.put("data", encodeTupleList(data));
+        return this;
     }
 
     public Event setData(String data) {

@@ -275,7 +275,8 @@ public class CompassCalibration extends Maneuver {
     }
 
     public CompassCalibration setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public CompassCalibration setCustom(String custom) {

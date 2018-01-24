@@ -66,7 +66,8 @@ public class TrexObservation extends IMCMessage {
     }
 
     public TrexObservation setAttributes(java.util.LinkedHashMap<String, ?> attributes) {
-        return setAttributes(attributes);
+        values.put("attributes", encodeTupleList(attributes));
+        return this;
     }
 
     public TrexObservation setAttributes(String attributes) {

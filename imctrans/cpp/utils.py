@@ -22,6 +22,8 @@ import os.path
 from xml.dom.minidom import Node, parseString
 from xml.etree import ElementTree as Et
 
+from .. import beautify
+
 BASE_FOLDER = 'Base'
 SPEC_FOLDER = 'Spec'
 
@@ -76,87 +78,8 @@ def get_cxx_copyright(xml_md5, skip_md5=False):
     return '\n'.join(result) + '\n'
 
 
-def beautify(text):
-    """Cleanup and indent source file."""
-    indent = 0
-    blank = False
-    list0 = []
-
-    # Remove extra empty lines and indent.
-    lines = text.splitlines()
-    for line in lines:
-        strip = line.strip()
-        if len(strip) == 0:
-            if blank:
-                continue
-            else:
-                blank = True
-                list0.append('')
-                continue
-        else:
-            blank = False
-
-        if strip == '};' and len(list0[-1]) == 0:
-            list0.pop()
-
-        if strip == '{':
-            list0.append(' ' * indent + strip)
-            indent += 2
-        elif strip == '}' or strip == '};':
-            indent -= 2
-            list0.append(' ' * indent + strip)
-        elif strip == 'public:' or strip == 'protected:' or strip == 'public:':
-            list0.append(' ' * (indent - 2) + strip)
-        else:
-            list0.append(' ' * indent + strip)
-
-    # Remove empty lines between blocks.
-    list1 = []
-    for line in list0:
-        strip = line.strip()
-        if (strip == '}' or strip == '};') and len(list1[-1]) == 0:
-            list1.pop()
-        list1.append(line)
-
-    # Remove extra empty lines at EOF.
-    while len(list1[-1]) == 0:
-        list1.pop()
-
-    return '\n'.join(list1) + '\n'
-
-
-def abbrev_to_var(abbrev, prefix=''):
-    """Convert camel case abbrev to proper variable name."""
-    name = ''
-    for c in abbrev:
-        if c.isupper():
-            name += '_' + c
-        else:
-            name += c
-
-    if prefix == '':
-        return name
-    else:
-        return prefix + '_' + name[1:].lower()
-
-
-def abbrev_to_macro(abbrev, prefix=''):
-    """Convert camel case abbrev to proper macro name."""
-    name = ''
-    for c in abbrev:
-        if c.isupper():
-            name += '_' + c
-        else:
-            name += c
-
-    if prefix == '':
-        return name
-    else:
-        return prefix + '_' + name[1:].upper()
-
-
 def compute_md5(imc_xml):
-    """Compute MD5 sum."""
+    """Compute MD5 sum of a file."""
     m = hashlib.md5()
     m.update(open(imc_xml, 'rb').read())
     return m.hexdigest()
@@ -175,6 +98,26 @@ def file_md5_matches(file_name, xml_md5):
             return xml_md5 == cpp_md5
     except IOError:
         return False
+
+
+def xml_node_remove_blanks(xml_node):
+    for x in xml_node.childNodes:
+        if x.nodeType == Node.TEXT_NODE:
+            if x.nodeValue:
+                x.nodeValue = x.nodeValue.strip()
+        elif x.nodeType == Node.ELEMENT_NODE:
+            xml_node_remove_blanks(x)
+
+
+def xml_node_md5(xml_node):
+    xml = Et.tostring(xml_node, encoding='utf-8')
+    node = parseString(xml)
+    xml_node_remove_blanks(node)
+    node.normalize()
+    text = node.toprettyxml(indent='', newl='', encoding="utf-8")
+    m = hashlib.md5()
+    m.update(text)
+    return m.hexdigest()
 
 
 def get_first_level_deps(root, abbrev):
@@ -515,7 +458,7 @@ class File:
             text += '\n#endif'
 
         text += '\n'
-        new_text = beautify(text)
+        new_text = beautify.beautify(text)
         try:
             old_text = open(self.path).read()
         except IOError:
@@ -531,22 +474,3 @@ class File:
             fd.write(new_text)
             fd.close()
 
-
-def xml_node_remove_blanks(xml_node):
-    for x in xml_node.childNodes:
-        if x.nodeType == Node.TEXT_NODE:
-            if x.nodeValue:
-                x.nodeValue = x.nodeValue.strip()
-        elif x.nodeType == Node.ELEMENT_NODE:
-            xml_node_remove_blanks(x)
-
-
-def xml_node_md5(xml_node):
-    xml = Et.tostring(xml_node, encoding='utf-8')
-    node = parseString(xml)
-    xml_node_remove_blanks(node)
-    node.normalize()
-    text = node.toprettyxml(indent='', newl='', encoding="utf-8")
-    m = hashlib.md5()
-    m.update(text)
-    return m.hexdigest()

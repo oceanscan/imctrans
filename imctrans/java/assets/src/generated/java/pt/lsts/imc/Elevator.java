@@ -267,7 +267,8 @@ public static final short FLG_CURR_POS = 0x01;
     }
 
     public Elevator setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Elevator setCustom(String custom) {

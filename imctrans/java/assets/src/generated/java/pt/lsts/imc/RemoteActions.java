@@ -48,7 +48,8 @@ public class RemoteActions extends IMCMessage {
     }
 
     public RemoteActions setActions(java.util.LinkedHashMap<String, ?> actions) {
-        return setActions(actions);
+        values.put("actions", encodeTupleList(actions));
+        return this;
     }
 
     public RemoteActions setActions(String actions) {

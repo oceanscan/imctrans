@@ -264,7 +264,8 @@ public static final short FLG_CURVE_RIGHT = 0x02;
     }
 
     public RowsCoverage setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public RowsCoverage setCustom(String custom) {

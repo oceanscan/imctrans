@@ -181,7 +181,8 @@ public static final short ENFORCE_AREA2D = 0x08;
     }
 
     public AutonomousSection setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public AutonomousSection setCustom(String custom) {

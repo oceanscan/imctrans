@@ -95,7 +95,8 @@ public class EntityList extends IMCMessage {
     }
 
     public EntityList setList(java.util.LinkedHashMap<String, ?> list) {
-        return setList(list);
+        values.put("list", encodeTupleList(list));
+        return this;
     }
 
     public EntityList setList(String list) {

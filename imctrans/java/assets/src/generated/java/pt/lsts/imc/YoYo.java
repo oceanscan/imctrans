@@ -208,7 +208,8 @@ public class YoYo extends Maneuver {
     }
 
     public YoYo setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public YoYo setCustom(String custom) {

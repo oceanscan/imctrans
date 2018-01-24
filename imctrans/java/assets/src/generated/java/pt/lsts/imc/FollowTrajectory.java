@@ -199,7 +199,8 @@ public class FollowTrajectory extends Maneuver {
     }
 
     public FollowTrajectory setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public FollowTrajectory setCustom(String custom) {

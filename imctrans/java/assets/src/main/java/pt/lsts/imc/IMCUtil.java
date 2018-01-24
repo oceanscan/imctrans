@@ -31,6 +31,10 @@ package pt.lsts.imc;
 
 import pt.lsts.imc.types.PlanSpecificationAdapter;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -74,6 +78,7 @@ public class IMCUtil {
             0x4400, 0x84C1, 0x8581, 0x4540, 0x8701, 0x47C0, 0x4680, 0x8641,
             0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
     };
+
     private static Vector<String> hexFields = new Vector<>();
 
     static {
@@ -187,7 +192,7 @@ public class IMCUtil {
             if (msg.getAbbrev() == null && fieldName.equals("timestamp")) {
                 SimpleDateFormat dateFormatUTC = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SSS ");
                 dateFormatUTC.setTimeZone(TimeZone.getTimeZone("UTC"));
-                value = new StringBuilder(dateFormatUTC.format(new Date((long) (msg.getDouble("timestamp") * 1000.0))) + "UTC");
+                value = new StringBuilder(dateFormatUTC.format(new Date(msg.getTimestampMillis())) + "UTC");
             } else if (msg.getAbbrev() == null && hexFields.contains(fieldName)) {
                 value.append("  [0x").append(Long.toHexString(msg.getLong(fieldName)).toUpperCase()).append("]");
             }
@@ -209,11 +214,11 @@ public class IMCUtil {
     }
 
     public static String getBundledDefinitions() {
-        java.io.InputStream xmlStream = IMCUtil.class.getResourceAsStream("/xml/IMC.xml");
+        java.io.InputStream xmlStream = IMCUtil.class.getResourceAsStream("/IMC.xml");
         java.io.InputStreamReader isreader = new java.io.InputStreamReader(xmlStream);
         java.io.BufferedReader reader = new java.io.BufferedReader(isreader);
         StringBuilder builder = new StringBuilder();
-        String line = null;
+        String line;
 
         try {
             while ((line = reader.readLine()) != null)
@@ -224,5 +229,42 @@ public class IMCUtil {
         }
 
         return builder.toString();
+    }
+
+    private static byte[] computeMD5(InputStream defStream) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            MessageDigest md = MessageDigest.getInstance("MD5");
+
+            byte[] extra = new byte[50000];
+            int ret;
+            for (; ; ) {
+                ret = defStream.read(extra);
+                if (ret != -1) {
+                    byte[] extra1 = new byte[ret];
+                    System.arraycopy(extra, 0, extra1, 0, ret);
+                    baos.write(extra1);
+                    baos.flush();
+                } else {
+                    break;
+                }
+            }
+
+            md.update(baos.toByteArray());
+            return md.digest();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static String computeMD5String(InputStream defStream) {
+        byte[] md5Array = computeMD5(defStream);
+        if (md5Array != null) {
+            BigInteger bi = new BigInteger(1, md5Array);
+            return bi.toString(16);
+        } else {
+            return "";
+        }
     }
 }

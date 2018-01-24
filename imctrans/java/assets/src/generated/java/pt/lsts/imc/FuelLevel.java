@@ -66,7 +66,8 @@ public class FuelLevel extends IMCMessage {
     }
 
     public FuelLevel setOpmodes(java.util.LinkedHashMap<String, ?> opmodes) {
-        return setOpmodes(opmodes);
+        values.put("opmodes", encodeTupleList(opmodes));
+        return this;
     }
 
     public FuelLevel setOpmodes(String opmodes) {

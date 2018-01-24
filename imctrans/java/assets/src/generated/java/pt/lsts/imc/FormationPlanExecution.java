@@ -165,7 +165,8 @@ public class FormationPlanExecution extends Maneuver {
     }
 
     public FormationPlanExecution setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public FormationPlanExecution setCustom(String custom) {

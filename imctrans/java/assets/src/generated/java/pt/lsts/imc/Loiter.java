@@ -325,7 +325,8 @@ public class Loiter extends Maneuver {
     }
 
     public Loiter setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Loiter setCustom(String custom) {

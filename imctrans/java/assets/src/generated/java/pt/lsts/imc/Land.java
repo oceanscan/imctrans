@@ -217,7 +217,8 @@ public class Land extends Maneuver {
     }
 
     public Land setCustom(java.util.LinkedHashMap<String, ?> custom) {
-        return setCustom(custom);
+        values.put("custom", encodeTupleList(custom));
+        return this;
     }
 
     public Land setCustom(String custom) {
